@@ -12,7 +12,13 @@ Funciona em **.NET, Java, Kotlin, Go, Python, Angular e React**.
 ## Status
 
 - **Fase 1 — "como é hoje"** (`skills/explain-current-state/`): implementada.
-- Fase 2 — proposta: planejada (ver `docs/09-roadmap.md`).
+- **Fase 2 — "proposta"** (`skills/propose-implementation/`): implementada.
+
+As duas fases são separadas por um checkpoint humano: o desenvolvedor valida o
+entendimento do código (fase 1) antes de o agente propor abordagens, e escolhe
+entre 2–3 abordagens (fase 2) antes do plano detalhado. A fase 2 valida a
+proposta de forma determinística (símbolos existem? raio de impacto real?) e
+emite os artefatos do `openspec propose`.
 
 ## Princípio
 
@@ -25,11 +31,16 @@ rápido, mais assertivo. Detalhe abundante em `docs/`.
 ```
 claude-feature-explainer/
 ├── skills/
-│   └── explain-current-state/     # a skill (formato Claude Code)
+│   ├── explain-current-state/     # fase 1 — investigar e explicar
+│   │   ├── SKILL.md
+│   │   ├── scripts/               # pipeline determinístico (bash)
+│   │   ├── references/            # schema, prompt de síntese, tiers
+│   │   └── assets/                # template da explicação
+│   └── propose-implementation/    # fase 2 — abordagens, validação, handoff
 │       ├── SKILL.md
-│       ├── scripts/               # pipeline determinístico (bash)
-│       ├── references/            # schema, prompt de síntese, tiers
-│       └── assets/                # template da explicação
+│       ├── scripts/               # validação + impacto + emissão OpenSpec
+│       ├── references/            # prompt de proposta, artefatos, checagens
+│       └── assets/                # templates de proposta e OpenSpec
 ├── docs/                          # definição viva do design + ADRs
 └── install.sh                     # instala a skill no Claude Code
 ```

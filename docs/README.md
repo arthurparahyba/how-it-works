@@ -15,6 +15,7 @@ para agentes de código que forem evoluir a solução.
 7. [Mapa de design vivo](06-living-design-map.md)
 8. [Integração com OpenSpec](07-openspec-integration.md)
 9. [Compatibilidade entre agentes](08-cross-tool-compat.md)
-10. [Roadmap](09-roadmap.md)
+10. [Fase 2: proposta](10-phase2-proposal.md)
+11. [Roadmap](09-roadmap.md)
 
 Decisões arquiteturais registradas em [`decisions/`](decisions/).

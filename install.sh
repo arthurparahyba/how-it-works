@@ -24,6 +24,7 @@ link_skill() {
 
 echo "instalando skills do Feature Explainer..."
 link_skill "explain-current-state"
+link_skill "propose-implementation"
 
 echo
 echo "Pronto. Verifique as ferramentas opcionais no PATH:"
