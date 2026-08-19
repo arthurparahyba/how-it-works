@@ -1,0 +1,13 @@
+# artefatos do caminho frio (não versionar caches)
+index.scip
+.scip/
+*.scip
+.cache/scip/
+
+# workspace de evals
+*-workspace/
+evals/results/
+
+# sistema
+.DS_Store
+*.log
