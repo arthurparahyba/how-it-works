@@ -111,6 +111,61 @@ if [ -n "$APP_CFG" ]; then
   done | head -25
 fi
 
+# --- schema declarado em CODIGO ---------------------------------------------
+# Nem todo projeto declara schema em .sql. Em .NET com EF Core ele vive em
+# classes de configuracao de entidade e em migrations C#; em Django, em
+# models.py e migrations Python; em Prisma, num .prisma; em Rails, em schema.rb.
+# Buscar so por extensao de arquivo de config deixa tudo isso de fora — foi o
+# que aconteceu no eShop, onde `vector(384)` e a ausencia de indice sao os dois
+# fatos decisivos e nenhum estava num .sql.
+CODE_SCHEMA_RE='(EntityTypeConfiguration|EntityConfiguration|DbContext)[^/]*\.(cs|vb)$|(^|/)[Mm]igrations?/|(^|/)models\.py$|(^|/)schema\.(prisma|rb)$|(^|/)db/migrate/|\.entity\.ts$|(^|/)entities?/[^/]+\.(ts|js)$'
+# Linhas que DECLARAM schema, em qualquer um desses ecossistemas.
+SCHEMA_API_RE='HasColumnType|HasIndex|HasMaxLength|HasKey|IsRequired|migrationBuilder\.|CreateIndex|AddColumn|@Column|@Table|@Index|models\.[A-Z]|add_index|add_column|create_table|@Entity|@ManyToOne|@OneToMany'
+
+CODE_SCHEMA_FILES="$(git ls-files 2>/dev/null \
+  | grep -E "$CODE_SCHEMA_RE" | grep -viE "$NOISE_RE" \
+  | grep -viE 'Designer\.cs$' | head -60)"
+
+if [ -n "$CODE_SCHEMA_FILES" ]; then
+  # Primeiro o que casa a fatia; depois, se nada casou, as declaracoes de schema
+  # desses arquivos — porque o nome da coluna raramente e o termo que se buscou.
+  csh="$(printf '%s\n' "$CODE_SCHEMA_FILES" | while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    grep -inE -- "$PATTERN" "$f" 2>/dev/null | head -3 | sed "s#^#${f}:#"
+  done | head -12)"
+  # As declaracoes de schema saem SO dos arquivos que casaram a fatia. Sem esse
+  # filtro, migrations de outras tabelas entravam com CreateSequence/DropSequence
+  # e enchiam o campo com ruido que nao tem relacao com a mudanca pedida.
+  matched_files="$(printf '%s\n' "$csh" | cut -d: -f1 | sort -u | grep -v '^$')"
+  # Migration e snapshot sao GERADOS e enormes: descrevem o banco inteiro, e as
+  # primeiras linhas deles sao sempre sequences e tabelas alheias a fatia. Deles
+  # so vale a linha que menciona a fatia. Ja um arquivo de configuracao de
+  # entidade e escrito a mao e curto — dele vale o conjunto das declaracoes,
+  # porque `HasIndex` AUSENTE e tao informativo quanto presente.
+  GENERATED_RE='(^|/)[Mm]igrations?/|ModelSnapshot\.(cs|vb)$|(^|/)migrations/[0-9]'
+  csd=""
+  if [ -n "$matched_files" ]; then
+    csd="$(printf '%s\n' "$matched_files" | while IFS= read -r f; do
+      [ -f "$f" ] || continue
+      if printf '%s' "$f" | grep -qE "$GENERATED_RE"; then
+        grep -inE -- "$PATTERN" "$f" 2>/dev/null | grep -iE -- "$SCHEMA_API_RE|Column|Property" \
+          | head -2 | sed "s#^#${f}:#"
+      else
+        grep -inE -- "$SCHEMA_API_RE" "$f" 2>/dev/null | head -6 | sed "s#^#${f}:#"
+      fi
+    done | head -12)"
+  fi
+  if [ -n "$csh" ] || [ -n "$csd" ]; then
+    echo
+    echo "### Schema declarado em codigo (EF Core / ORM / migrations)"
+    [ -n "$csh" ] && printf '%s\n' "$csh"
+    if [ -n "$csd" ]; then
+      [ -n "$csh" ] && echo "  --- declaracoes de schema nesses arquivos ---"
+      printf '%s\n' "$csd"
+    fi
+  fi
+fi
+
 # Os arquivos de schema/migration merecem ser listados mesmo sem casar termo:
 # a ausencia de match pode significar convencao de nome diferente, nao ausencia
 # de relevancia. O LLM decide se vale abrir.
