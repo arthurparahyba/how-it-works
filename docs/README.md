@@ -18,4 +18,7 @@ para agentes de código que forem evoluir a solução.
 10. [Fase 2: proposta](10-phase2-proposal.md)
 11. [Roadmap](09-roadmap.md)
 
+Fora do índice, [Exemplo de execução](exemplo-execucao.md) registra uma execução
+real do pipeline, um estágio por vez, com entrada e saída de cada script.
+
 Decisões arquiteturais registradas em [`decisions/`](decisions/).
