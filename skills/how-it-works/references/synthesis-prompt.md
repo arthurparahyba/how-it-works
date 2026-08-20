@@ -61,10 +61,51 @@ Do `blast_radius_b64`: quem chama e o que é chamado. Se houver um call graph,
 renderize como Mermaid `graph TD`. Isso deixa claro o que a mudança futura vai
 tocar.
 
+### 7. Escreva para quem não conhece o domínio
+
+O leitor conhece programação, mas **não necessariamente o vocabulário desta
+fatia**. Jargão não explicado transforma uma explicação correta numa que não
+serve para nada — a pessoa entende as frases e não entende o assunto.
+
+Regra prática: **na primeira vez que um termo específico do domínio aparece,
+diga o que ele é em uma frase.** Não uma definição de dicionário — o que ele é
+*neste código*.
+
+> ❌ "Transforma o texto num embedding e ordena por distância de cosseno."
+>
+> ✅ "Transforma o texto numa lista de números que representa o significado dele
+> (o termo técnico é *embedding*). Textos com sentido parecido geram listas
+> parecidas, e o banco ordena os produtos pela lista mais próxima."
+
+Vale para: termos de biblioteca (`embedding`, `pgvector`, `HNSW`), mecanismos do
+framework (injeção de dependência, minimal API, data binding), e siglas
+(`DI`, `ORM`, `FK`). Se você precisou saber o que era para escrever, o leitor
+precisa que você diga.
+
+### 8. Mostre o efeito, não só o mecanismo
+
+Descrever o que o código faz é metade. A outra metade é **o que se observa**
+quando ele roda. Um exemplo concreto vale mais que um parágrafo de mecanismo,
+porque é assim que o bug aparece para quem usa.
+
+> ❌ "`totalItems` conta todos os itens, mas a página filtra por `Embedding != null`."
+>
+> ✅ "`totalItems` conta todos os itens, mas a página filtra por
+> `Embedding != null`. **Na prática:** catálogo com 100 produtos e só 40
+> indexados — a resposta anuncia 100 resultados em 10 páginas, e da página 5 em
+> diante vem vazio."
+
+Use exemplos sobretudo nas peças **críticas**: entrada concreta, o que o usuário
+esperaria, e o que de fato acontece. Uma tabela pequena costuma resolver quando
+o comportamento varia por ambiente ou por configuração.
+
 ## Regras de forma
 
 - Blocos de código abaixo de ~20 linhas. Se precisar de mais, resuma e aponte.
 - Prosa curta. Sem headers decorativos, sem encher linguiça.
+- **Os títulos das seções são fixos** (os do formato abaixo). A linguagem da
+  prosa muda para ficar clara; a estrutura não — o leitor e as checagens
+  automáticas contam com ela.
 - Português claro, direto, sem jargão gratuito.
 
 ## Honestidade sobre limites (obrigatório)
