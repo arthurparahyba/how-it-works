@@ -115,7 +115,11 @@ Para o simbolo central da fatia:
 scripts/expand_impact.sh "NomeDoSimbolo" 1 "<caminho_do_indice_scip_ou_vazio>"
 ```
 
-Expande **1 salto** (chamadores + chamados), ranqueado, com cap no top-N. Use 2
+Expande **1 salto** (chamadores + chamados), ranqueado, com cap no top-N. Com
+ast-grep presente, cada aresta vem **rotulada**: `[definicao]` (onde a coisa e),
+`[chamada]` (onde e invocada, incluindo `objeto.metodo(...)`) e `[referencia]`
+(onde o nome aparece sem ser chamada — em C# minimal API, `MapGet("/rota",
+Handler)` passa o metodo como valor, e essa aresta importa). Use 2
 saltos **apenas** se a mudanca for critica ou o raio for ambiguo — 2 saltos
 custam caro e crescem rapido. Em `tier2` as arestas sao precisas; em `tier1`,
 aproximadas; sempre trate como incompletas onde houver dispatch dinamico,

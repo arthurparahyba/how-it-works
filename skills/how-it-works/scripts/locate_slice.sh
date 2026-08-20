@@ -45,6 +45,33 @@ IFS="$_oifs"
 
 have rg || warn "ripgrep ausente; usando git grep"
 
+# --- definicoes primeiro (quando ha ast-grep) --------------------------------
+# O ranqueamento por raridade ja poe o termo especifico na frente, mas dentro de
+# um termo ele nao distingue a DEFINICAO de uma ocorrencia qualquer. A definicao
+# e a semente de maior valor: e o lugar onde a coisa e, nao onde ela e mencionada.
+# Casando por tipo de no, ela vai para o topo — e o resto do ranqueamento segue
+# igual. Sem ast-grep, este bloco simplesmente nao roda.
+emit_defs_first() {
+  [ -n "$AG" ] || return 0
+  local langs lang t hits n=0
+  langs="$(repo_langs)"
+  [ -z "$langs" ] && return 0
+  for t in "${TERM_LIST[@]}"; do
+    case "$t" in *[!A-Za-z0-9_]*) continue ;; esac   # so identificadores
+    for lang in $langs; do
+      hits="$(ag_find_defs "$AG" "$lang" "$t" "${SCOPES[@]}" 2>/dev/null)"
+      [ -z "$hits" ] && continue
+      while IFS= read -r h; do
+        [ -z "$h" ] && continue
+        printf '%s:%s\n' "$h" "$(sed -n "${h##*:}p" "${h%:*}" 2>/dev/null | sed 's/^[[:space:]]*//')"
+        n=$((n+1))
+      done <<< "$hits"
+    done
+  done
+  [ "$n" -gt 0 ] && log "definicoes por tipo de no: $n (vao no topo das sementes)"
+  return 0
+}
+
 # --- ranqueamento por raridade ----------------------------------------------
 # Um cap aplicado sobre a saida bruta corta por ORDEM DE LINHA, e portanto joga
 # fora a linha mais especifica so porque ela vem depois. Ex.: buscar
@@ -58,6 +85,7 @@ if [ -n "$TMPD" ]; then
   done | sort -n > "$TMPD/ranked"
 
   : > "$TMPD/hits"
+  emit_defs_first >> "$TMPD/hits"
   while IFS="$(printf '\t')" read -r c t; do
     [ -z "$t" ] && continue
     [ "${c:-0}" -eq 0 ] && { log "termo sem hits: $t"; continue; }

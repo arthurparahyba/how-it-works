@@ -32,6 +32,15 @@ ser do EF Core — aparecer como definido ali. `field: name` restringe ao
 identificador da declaração, e ancorar com `^…$` evita que `Catalog` case com
 `CatalogAI`.
 
+## Onde é usado no pipeline
+
+| Script | O que ganha |
+|---|---|
+| `locate_slice.sh` | a **definição** do símbolo vai para o topo das sementes |
+| `expand_impact.sh` | arestas rotuladas: `[definicao]`, `[chamada]`, `[referencia]` |
+| `check_anchors.sh` | qual declaração contém uma linha, pelo parser em vez de regex |
+| `validate_proposal.sh` (fase 2) | "este símbolo existe?" sem falso positivo |
+
 ## Cobertura
 
 As 7 linguagens-alvo (.NET/C#, Java, Kotlin, Go, Python, TypeScript/Angular,

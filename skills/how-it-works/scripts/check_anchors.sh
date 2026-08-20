@@ -25,6 +25,8 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/lib/common.sh"
 
+AG_BIN="$(astgrep_bin)"
+
 DOC="${1:?informe o arquivo da explicacao}"
 [ -f "$DOC" ] || { echo "arquivo nao encontrado: $DOC"; exit 2; }
 ROOT="${2:-$(repo_root)}"
@@ -102,7 +104,41 @@ resolve() {
 # Sobe procurando uma assinatura. Funciona bem em C#, Java, Go e TS; pior em
 # Python; nao existe em SQL/config — nesses casos devolve vazio, e o chamador
 # diz honestamente que nao sabe.
+# Qual declaracao contem a linha. Duas estrategias: por tipo de no quando ha
+# ast-grep (preciso — o parser sabe onde cada bloco comeca e termina), e a
+# heuristica de regex como reserva. A heuristica erra em assinatura que quebra
+# em varias linhas e em linguagem indentada como Python; o parser nao.
+enclosing_by_kind() {
+  local f="$1" ln="$2" lang kinds k
+  [ -n "$AG_BIN" ] || return 1
+  lang="$(lang_of_file "$f")"; [ -z "$lang" ] && return 1
+  kinds="$(node_kinds "$lang" def_class; node_kinds "$lang" def_func; node_kinds "$lang" def_method)"
+  [ -z "$kinds" ] && return 1
+  for k in $kinds; do
+    "$AG_BIN" scan --inline-rules "id: e
+language: $lang
+rule:
+  kind: $k" "$f" --json=stream </dev/null 2>/dev/null \
+      | sed -n 's/.*"start":{"line":\([0-9]*\).*"end":{"line":\([0-9]*\).*/\1 \2/p' \
+      | awk -v t="$ln" -v kind="$k" '
+          { s = $1 + 1; e = $2 + 1
+            if (s <= t && t <= e && (best == 0 || s > best)) { best = s } }
+          END { if (best) print best }'
+  done | sort -rn | head -1
+}
+
 enclosing() {
+  local f="$1" ln="$2" start_line name
+  start_line="$(enclosing_by_kind "$f" "$ln")"
+  if [ -n "$start_line" ]; then
+    name="$(sed -n "${start_line}p" "$f" 2>/dev/null | sed 's/(.*$//' \
+            | grep -oE '[A-Za-z_][A-Za-z0-9_]*[[:space:]]*$' | tr -d '[:space:]')"
+    if [ -n "$name" ]; then printf '%s() (linha %s)' "$name" "$start_line"; return 0; fi
+  fi
+  _enclosing_regex "$f" "$ln"
+}
+
+_enclosing_regex() {
   local f="$1" ln="$2"
   # Uma passada de awk ate a linha alvo, guardando a ultima assinatura vista.
   # A versao anterior fazia um `sed -n Np` por linha varrida — 250 processos por

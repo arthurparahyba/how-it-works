@@ -108,3 +108,70 @@ rule:
   done
   return 1
 }
+
+# --- localizacao por kind, com saida arquivo:linha ---------------------------
+# ag_defs_by_kind responde SIM/NAO. Estas duas devolvem ONDE, no mesmo formato
+# que o resto do pipeline usa (arquivo:linha), para alimentar sementes e raio
+# de impacto sem inventar um formato novo.
+
+# Extrai arquivo:linha do --json=stream do ast-grep. A linha vem 0-based no
+# JSON; somamos 1. Sem jq: nem todo ambiente tem, e nao vamos exigir.
+_ag_stream_to_lines() {
+  sed -n 's/.*"start":{"line":\([0-9]*\).*"file":"\([^"]*\)".*/\2 \1/p' \
+    | awk '{ printf "%s:%d\n", $1, $2+1 }'
+}
+
+# Onde o simbolo e DEFINIDO. Vazio se nao houver tabela para a linguagem.
+ag_find_defs() {
+  local ag="$1" lang="$2" name="$3"; shift 3
+  local scopes=("$@"); [ ${#scopes[@]} -eq 0 ] && scopes=(".")
+  local kinds k
+  kinds="$(node_kinds "$lang" def_class; node_kinds "$lang" def_func; node_kinds "$lang" def_method)"
+  [ -z "$kinds" ] && return 2
+  for k in $kinds; do
+    "$ag" scan --inline-rules "id: d
+language: $lang
+rule:
+  kind: $k
+  has: { field: name, regex: '^$name$' }" "${scopes[@]}" --json=stream </dev/null 2>/dev/null \
+      | _ag_stream_to_lines
+  done
+}
+
+# Onde o simbolo e CHAMADO. Cobre `foo(...)` e `obj.foo(...)` — o segundo caso e
+# a maioria em Java/C#, e era exatamente o que o padrao textual `foo($$$)`
+# deixava passar: no petclinic ele achava 0 chamadas de
+# `owners.findByLastNameStartingWith(...)`, contra 13 por kind.
+ag_find_calls() {
+  local ag="$1" lang="$2" name="$3"; shift 3
+  local scopes=("$@"); [ ${#scopes[@]} -eq 0 ] && scopes=(".")
+  local kinds k fld out
+  kinds="$(node_kinds "$lang" call)"
+  [ -z "$kinds" ] && return 2
+  # O campo que guarda o nome MUDA por linguagem: Java usa `name` no
+  # method_invocation, C# usa `function` no invocation_expression. Em vez de
+  # modelar isso na tabela, tentamos os candidatos — se a linguagem usar outro
+  # nome de campo, a regra simplesmente nao casa e passamos ao proximo.
+  #
+  # E o regex precisa aceitar o ponto: em C# o no do campo `function` e a
+  # expressao inteira (`services.CatalogAI.GetEmbeddingAsync`), nao so o
+  # identificador. `(^|\.)nome$` cobre chamada nua e chamada em objeto, sem
+  # deixar `GetEmbedding` casar com `GetEmbeddingsAsync`.
+  for k in $kinds; do
+    for fld in name function; do
+      out="$("$ag" scan --inline-rules "id: c
+language: $lang
+rule:
+  kind: $k
+  has: { field: $fld, regex: '(^|\.)$name\$' }" "${scopes[@]}" --json=stream </dev/null 2>/dev/null \
+        | _ag_stream_to_lines)"
+      if [ -n "$out" ]; then printf '%s\n' "$out"; break; fi
+    done
+  done
+}
+
+# Linguagens presentes no repositorio, deduzidas das extensoes rastreadas.
+repo_langs() {
+  git ls-files 2>/dev/null | sed 's/.*\.//' | sort -u \
+    | while read -r e; do lang_of_file "x.$e"; done | sort -u | grep -v '^$'
+}

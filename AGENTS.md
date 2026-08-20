@@ -94,6 +94,16 @@ errado: o regex precisa ir em **aspas simples** (entre aspas duplas o YAML come 
 `\b` como backspace), e precisa de `field: name` (sem isso, `has: {regex}` casa o
 corpo inteiro do método e um símbolo apenas *chamado* passa por *definido*).
 
+**O campo que guarda o nome muda por linguagem.** Java usa `field: name` no
+`method_invocation`; C# usa `field: function` no `invocation_expression`, e ali o
+nó é a expressão inteira (`obj.Metodo`), então o regex precisa ser
+`(^|\.)nome$`, não `^nome$`. Os helpers tentam os dois campos.
+
+**Variável setada dentro de um pipeline não sai de lá.** `for ... done | head`
+roda em subshell; um `found=1` lá dentro nunca chega ao chamador. Isso fez o
+`expand_impact` reportar falha tendo achado tudo, e a busca textual rodava por
+cima, duplicando o raio.
+
 **Comportamento vive fora do código.** No petclinic, a busca só é insensível a
 maiúsculas por causa de `VARCHAR_IGNORECASE` no schema do H2. No eShop, a busca
 semântica só existe se a configuração registrar um gerador de embeddings. Nenhum
