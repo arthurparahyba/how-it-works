@@ -83,6 +83,18 @@ elif ! $has_astgrep; then
   tier="tier0"
 fi
 
+# --- o que falta para subir de tier -----------------------------------------
+# Reportar so "tier0" nao ajuda ninguem: quem le nao sabe que da para melhorar
+# nem como. A skill NAO instala nada — instalar e decisao do dono da maquina, o
+# gerenciador varia por sistema, e a degradacao graciosa e escolha de desenho,
+# nao defeito a contornar. Ela informa; a pessoa decide.
+upgrade=""
+if [ "$tier" = "tier0" ]; then
+  upgrade="Sem ast-grep: as arestas de impacto sao casamento de texto. Instalando-o, a skill passa a casar por tipo de no do tree-sitter (definicao vs chamada vs referencia). Instale com: brew install ast-grep | npm i -g @ast-grep/cli | cargo install ast-grep"
+elif [ "$tier" = "tier1" ]; then
+  upgrade="Sem indice SCIP: as arestas sao estruturais mas locais. Um indice construido no caminho frio (CI) daria find-references reais. Ver docs/05-performance.md."
+fi
+
 # --- emite JSON --------------------------------------------------------------
 join() { local IFS=,; echo "$*"; }
 langs_json="["; first=true
@@ -104,7 +116,8 @@ cat << JSON
   "scip_index": { "present": $has_scip_index, "path": "$(json_escape "$scip_index")", "freshness": "$scip_fresh" },
   "design_map": { "present": $has_design_map, "path": "$(json_escape "$design_map")" },
   "buildable": $buildable,
-  "precision_tier": "$tier"
+  "precision_tier": "$tier",
+  "upgrade_hint": "$(json_escape "$upgrade")"
 }
 JSON
 

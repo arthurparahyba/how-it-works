@@ -89,6 +89,12 @@ design, e o **`precision_tier`** resultante:
 
 Deixe o tier guiar quanta confianca atribuir ao raio de impacto adiante.
 
+**Nunca instale ferramenta.** Se algo falta, o campo `upgrade_hint` do dossie
+diz o que e e qual o comando — repasse ao usuario na secao "Pontos a confirmar"
+e siga com a degradacao. Instalar software na maquina de alguem e decisao dela,
+o gerenciador varia por sistema, e rodar em tier mais baixo e comportamento
+previsto, nao falha.
+
 ### Passo 2 — Traduzir a mudanca em termos de busca
 
 A partir da descricao do usuario ("corrigir o bug no calculo de desconto"),

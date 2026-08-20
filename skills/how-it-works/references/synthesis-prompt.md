@@ -180,6 +180,9 @@ Termine com uma seção **"Pontos a confirmar"** listando o que a análise está
 não resolve. Consulte `confidence_note` e o `precision_tier` do dossiê:
 
 - Se `tier1`/`tier0`: avise que as arestas de impacto são aproximadas.
+- Se o dossiê trouxer `upgrade_hint` preenchido, **repasse-o em uma linha**: o
+  leitor tem direito de saber que a precisão desta análise pode ser melhorada e
+  como. Você não instala nada — apenas informa.
 - Marque explicitamente onde pode haver dispatch dinâmico, reflexão, injeção de
   dependência (DI) ou chamadas entre serviços que o grafo estático não pega.
 - Se algum campo do dossiê veio vazio, diga — não invente para preencher.
