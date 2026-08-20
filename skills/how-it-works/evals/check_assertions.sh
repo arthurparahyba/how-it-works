@@ -63,7 +63,14 @@ case "$CASE" in
     has   "descreve o que existe (criacao de visita)"  'visits/new|processNewVisitForm|initNewVisitForm'
     has   "cita a colecao de visitas em Pet"           'Pet\.java|addVisit|OneToMany|visits'
     has   "tem a secao Pontos a confirmar"             '^#+.*Pontos a confirmar'
-    hasnt "nao inventa simbolo de cancelamento"        'deleteVisit|cancelVisit|removeVisit|VisitService|VisitRepository'
+    # Distinguir "afirma que X existe" de "propõe onde X deveria ficar" é
+    # justamente o que grep não faz bem — e num caso negativo a segunda forma é
+    # o comportamento DESEJADO ("o simétrico Owner.cancelVisit é o lugar
+    # coerente para a regra"). Programaticamente só se pega o caso inequívoco:
+    # o símbolo inexistente ancorado em arquivo:linha, que é afirmação de que
+    # ele está lá. O resto vai para a rubrica, que precisa de julgamento.
+    hasnt "nao ancora simbolo inexistente em arquivo:linha" \
+          '(deleteVisit|cancelVisit|removeVisit|VisitService|VisitRepository)[^.]{0,80}\.(java|kt|cs):[0-9]+|[A-Za-z]+\.(java|kt|cs):[0-9]+[^.]{0,80}(deleteVisit|cancelVisit|removeVisit|VisitService)'
     ;;
   *)
     echo "caso desconhecido: $CASE"; exit 2 ;;
