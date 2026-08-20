@@ -1,5 +1,5 @@
 ---
-name: explain-current-state
+name: how-it-works
 description: >-
   Investiga e explica como uma funcionalidade especifica esta implementada HOJE,
   antes de propor qualquer mudanca. Use esta skill sempre que o usuario for
@@ -14,7 +14,7 @@ description: >-
   Angular e React.
 ---
 
-# Explain Current State
+# How It Works
 
 Esta skill executa a **fase 1** de um fluxo de duas fases: primeiro entender
 *como e hoje* (esta skill), depois definir *o que fazer* (a proposta, que
@@ -34,11 +34,30 @@ corta tokens, acelera e evita alucinacao. O LLM entra uma unica vez, no fim.
 - Para gerar a proposta de implementacao (isso e a fase 2 / `openspec propose`).
 - Quando o usuario so quer uma resposta factual rapida sobre uma linha de codigo.
 
-## O pipeline (siga nesta ordem)
+## O caminho normal — tres passos
 
-Os passos 1–5 sao **deterministicos** (scripts em `scripts/`). O passo 6 e a
-**unica** chamada de raciocinio do LLM. Nunca inverta essa ordem: coletar antes,
-raciocinar depois.
+Na grande maioria dos casos a skill inteira sao **tres** movimentos:
+
+1. Derivar os termos de busca a partir do pedido (julgamento leve seu).
+2. Rodar **`scripts/build_dossier.sh`** — um comando so, que faz toda a coleta.
+3. Ler `references/synthesis-prompt.md` e escrever a explicacao.
+
+O passo 3 e a **unica** chamada de raciocinio. Nunca inverta a ordem: coletar
+antes, raciocinar depois.
+
+**Agrupe o que e independente.** Ler o `synthesis-prompt.md` e rodar o
+`build_dossier.sh` nao dependem um do outro — dispare os dois na mesma resposta.
+Cada ida e volta separada reprocessa todo o contexto acumulado, e e ai que o
+tempo de execucao vai, nao nos scripts (medido: ~5s de script contra ~218s de
+modelo numa execucao real).
+
+**Nao rode os scripts avulsos por padrao.** O `build_dossier.sh` ja executa
+`detect_capabilities`, `locate_slice`, `expand_impact`, `collect_config` e
+`enrich_provenance` por dentro. Roda-los antes e depois chamar o orquestrador
+paga tudo duas vezes. Os passos detalhados abaixo existem para **refino**:
+quando o dossie vier ruim e voce precisar ajustar um estagio isolado.
+
+## Os estagios, para quando precisar refinar
 
 ### Passo 0 — Ler o mapa de design vivo, se existir
 
@@ -50,7 +69,9 @@ Se existir, **leia-o primeiro**. Ele diz quais modulos existem, suas
 responsabilidades e as costuras entre eles. Use-o como *prior*: ele aponta em
 quais subdiretorios buscar, evitando varrer o repo inteiro. Se nao existir, o
 pipeline funciona mesmo assim (so um pouco mais amplo na localizacao) — e ao
-final sugira ao usuario criar um (veja `references/tiers-and-degradation.md`).
+final sugira ao usuario criar um. (O racional completo esta em
+`references/tiers-and-degradation.md`; **nao e leitura necessaria** para
+executar a skill.)
 
 ### Passo 1 — Detectar capacidades
 
@@ -101,6 +122,22 @@ aproximadas; sempre trate como incompletas onde houver dispatch dinamico,
 reflexao, injecao de dependencia (comum em .NET/Spring) ou chamadas entre
 servicos.
 
+### Passo 4b — Coletar a camada de configuracao/schema
+
+```bash
+scripts/collect_config.sh "termos|de|busca" "SimboloCentral"
+```
+
+Metade do comportamento de um sistema Spring/.NET **nao esta no codigo**: o tipo
+e a collation de uma coluna, o profile ativo, um feature flag, um binding de
+rota. Uma explicacao que olha so `.java`/`.cs` sai correta e cega.
+
+O script converte a nomenclatura entre camadas (`lastName` no codigo vira
+`last_name` no SQL, `last-name` no YAML, `LAST_NAME` no `.env`) — sem isso a
+busca falha em silencio — e ranqueia: schema/migration/config de app primeiro,
+i18n e seeds so como amostra. O `build_dossier.sh` ja o executa; o campo sai em
+`config_b64`.
+
 ### Passo 5 — Montar o dossie
 
 Em vez de rodar os passos 1–4 na mao, prefira o orquestrador, que faz tudo e
@@ -110,19 +147,37 @@ emite o **FeatureDossier** compacto (JSON) de uma vez:
 scripts/build_dossier.sh "descricao da mudanca" "termos|de|busca" "SimboloCentral" modulo1 modulo2
 ```
 
-Campos `*_b64` sao base64 de blocos de texto (para nao quebrar o JSON) —
-decodifique com `base64 -d` ao ler. O schema completo esta em
-`references/dossier-schema.md`. **Nao inclua codigo cru alem do dossie** no que
-vai para a sintese: o dossie ja e o sinal denso; mais que isso e desperdicio de
-tokens.
+Sai em **markdown**, legivel com um unico `cat`. Leia-o inteiro de uma vez.
+
+Se uma secao vier marcada **VAZIO**, ela traz junto o motivo provavel — trate
+isso como sinal, nao como resultado. Em especial: *Raio de impacto* vazio quase
+sempre significa que o simbolo central esta errado, nao que ninguem depende
+dele. O nome real costuma estar nas *Ocorrencias*, logo acima.
+
+Para o handoff da fase 2, que precisa de estrutura, gere tambem a versao JSON:
+
+```bash
+scripts/build_dossier.sh --json "descricao" "termos" "Simbolo" modulos... \
+  > openspec/changes/<id>/current-state.dossier.json
+```
+
+Nao leia o JSON para sintetizar: ele carrega os blocos em base64, o que faz
+voce pagar duas vezes pelo mesmo conteudo (medido: 6.884 tokens em JSON contra
+3.114 em markdown). (O schema esta em `references/dossier-schema.md`; **nao e
+leitura necessaria** para executar a skill.)
+
+**Regra de economia (e seu limite).** O dossie e o sinal denso: nao varra o repo
+atras de mais contexto, nao leia arquivo que ele nao apontou. Mas ele entrega
+*linhas isoladas*, e o template exige trecho real para as pecas **criticas** —
+entao abrir os poucos arquivos que o dossie ja apontou como criticos e parte do
+trabalho, nao desperdicio. O que desperdica e ler o que ele nao apontou.
 
 ### Passo 6 — Sintetizar a explicacao (unica chamada do LLM)
 
-Agora, e so agora, raciocine. Leia `references/synthesis-prompt.md` e siga-o a
-risca — ele codifica a filosofia que faz a explicacao ser boa (visao geral antes
-do detalhe, "porque" e nao so "o que", ancorado no codigo real, detalhe de
-codigo **condicional** a criticidade). Produza a explicacao no formato de
-`assets/explanation-template.md`.
+Agora, e so agora, raciocine. Leia `references/synthesis-prompt.md` — **um
+arquivo, uma leitura** — e siga-o a risca. Ele traz a filosofia (visao geral
+antes do detalhe, "porque" e nao so "o que", ancorado no codigo real, detalhe de
+codigo **condicional** a criticidade) e, no fim, o formato de saida.
 
 Regra de profundidade condicional (o que resolve "explicacoes rasas"): para cada
 elemento tocado, classifique como **trivial / significativo / critico**. Trivial

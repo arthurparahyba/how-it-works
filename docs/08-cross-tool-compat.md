@@ -10,8 +10,8 @@ dentro de `~/.claude/`, o `install.sh` cria um symlink da skill para o caminho d
 descoberta:
 
 ```
-~/.claude/skills/explain-current-state
-  -> ~/.claude/claude-feature-explainer/skills/explain-current-state
+~/.claude/skills/how-it-works
+  -> ~/.claude/claude-feature-explainer/skills/how-it-works
 ```
 
 Os scripts em `scripts/` são bash puro e independem do agente.

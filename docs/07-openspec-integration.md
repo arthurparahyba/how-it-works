@@ -13,7 +13,7 @@ Não briga com o fluxo do OpenSpec — preenche o buraco que ele mesmo aponta.
 
 ```
 descrição da mudança
-  → [fase 1: explain-current-state]  ← esta skill
+  → [fase 1: how-it-works]  ← esta skill
   → explicação clara ("como é hoje")
   → dev comenta / ajusta               ← checkpoint humano
   → [fase 2: proposta]                 ← futura

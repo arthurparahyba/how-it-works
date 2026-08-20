@@ -28,5 +28,5 @@ marca; sem SCIP/sem build → ast-grep; sem ast-grep → textual. Ver
 
 ## Contrato de dados
 
-O `FeatureDossier` (schema em `skills/explain-current-state/references/dossier-schema.md`)
+O `FeatureDossier` (schema em `skills/how-it-works/references/dossier-schema.md`)
 é o único input de fatos do LLM e o insumo da fase 2 / OpenSpec.

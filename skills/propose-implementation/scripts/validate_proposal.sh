@@ -29,7 +29,8 @@ symbol_defined() {
   if [ -n "$AG" ]; then
     # tenta padroes de definicao comuns entre linguagens
     for pat in "class $sym" "def $sym" "func $sym" "function $sym" "$sym(\$\$\$) {" "void $sym" "$sym ="; do
-      if "$AG" run --pattern "$pat" --json=compact 2>/dev/null | grep -q '"text"'; then return 0; fi
+      if "$AG" run --pattern "$pat" --json=compact . </dev/null 2>/dev/null \
+           | grep -q '"text"'; then return 0; fi
     done
   fi
   # fallback textual: nome apos class/def/func/etc, ou nome seguido de ( ou = .
@@ -37,12 +38,19 @@ symbol_defined() {
   # nao gerar falso "missing" durante desenvolvimento ativo. Prefere ripgrep;
   # cai para grep -r; git grep e o ultimo recurso (so ve commitados).
   local re="(class|def|func|function|interface|type)[[:space:]]+$sym\b|\b$sym[[:space:]]*[(=]"
+  # O `.` e o `</dev/null` sao ambos obrigatorios e por motivos diferentes:
+  #   - sem o `.`, o rg le do STDIN quando ele nao e um terminal. Como o laco
+  #     de claims abaixo roda com `done < "$CLAIMS"`, o rg leria o proprio
+  #     arquivo de claims em vez do repositorio -> todo simbolo vira "missing".
+  #   - sem o `</dev/null`, o rg consome o resto do stdin do laco, e o `read`
+  #     nao encontra mais linhas -> so a primeira claim e avaliada.
+  # Vale igual em Linux, macOS e Git Bash.
   if have rg; then
-    rg -q -e "$re" 2>/dev/null && return 0
-  elif grep -rIqE "$re" . 2>/dev/null; then
+    rg -q -e "$re" . </dev/null 2>/dev/null && return 0
+  elif grep -rIqE "$re" . </dev/null 2>/dev/null; then
     return 0
   else
-    git grep -qE "$re" 2>/dev/null && return 0
+    git grep -qE "$re" </dev/null 2>/dev/null && return 0
   fi
   return 1
 }
@@ -80,3 +88,7 @@ JSON
 
 [ ${#missing[@]} -gt 0 ]   && warn "SIMBOLOS/ARQUIVOS INEXISTENTES referenciados: ${missing[*]} (risco de alucinacao)"
 [ ${#collision[@]} -gt 0 ] && warn "COLISAO: proposta cria algo que ja existe: ${collision[*]}"
+
+# O veredito vai no JSON, nao no exit status: sem este exit explicito o script
+# herdaria o status do teste acima e sairia 1 justamente no caminho feliz.
+exit 0

@@ -1,0 +1,86 @@
+{
+  "skill_name": "how-it-works",
+  "notas": "Campos 'setup', 'gabarito' e 'rubrica' sao extensoes deste projeto sobre o schema do skill-creator. O runner dele usa 'prompt' e 'expectations'; os extras servem ao check_assertions.sh e ao agente juiz.",
+  "evals": [
+    {
+      "id": 1,
+      "nome": "petclinic-busca-owner",
+      "prompt": "quero melhorar a busca de owners por sobrenome, me explique como funciona hoje antes de eu mexer",
+      "expected_output": "Explicacao da fatia de busca de owners: ponto de entrada, query derivada do Spring Data, paginacao, e a divergencia de case-sensitivity entre os schemas.",
+      "setup": {
+        "repo": "https://github.com/spring-projects/spring-petclinic",
+        "commit": "88e37c15cf6fc8490b01bc3e8e2c800cec1ac272",
+        "linguagem": "java",
+        "porque_este_caso": "Fatia pequena e bem delimitada, mas com tres armadilhas: um simbolo sem implementacao no codigo (Spring Data), comportamento que so existe no schema SQL, e dois commits que explicam codigo nao-obvio."
+      },
+      "gabarito": {
+        "fatos_que_devem_aparecer": [
+          "OwnerController.processFindForm e o ponto de entrada (GET /owners)",
+          "a busca e por PREFIXO (StartingWith), nao substring",
+          "pageSize esta cravado em 5 no findPaginatedForOwnersLastName",
+          "zero resultados volta ao formulario com erro; exatamente um redireciona para /owners/{id}",
+          "OwnerRepository e interface sem implementacao: o Spring Data gera a query em runtime",
+          "a insensibilidade a maiusculas vem de VARCHAR_IGNORECASE no schema do H2, e o Postgres usa TEXT"
+        ],
+        "porques_disponiveis_na_proveniencia": [
+          "bb37aad — o strip() no sobrenome veio de um fix de espacos em branco",
+          "c7ee170 — o setDisallowedFields no @InitBinder veio de endurecimento do binder"
+        ],
+        "armadilhas": [
+          "Nao pode inventar uma classe de implementacao do repositorio (ex.: OwnerRepositoryImpl): ela nao existe.",
+          "Nao pode afirmar que a busca e case-insensitive sem qualificar que isso depende do banco."
+        ]
+      },
+      "expectations": [
+        "A explicacao ancora as afirmacoes em arquivo:linha verificaveis",
+        "A explicacao menciona o schema SQL como origem do comportamento de case-sensitivity",
+        "A explicacao usa pelo menos um dos commits da proveniencia para explicar um 'porque'",
+        "A explicacao sinaliza que o repositorio e resolvido em runtime pelo Spring Data",
+        "A explicacao termina com 'Pontos a confirmar' e uma pergunta objetiva",
+        "A explicacao aplica profundidade condicional: nem tudo recebe o mesmo detalhe"
+      ],
+      "rubrica": [
+        "Lendo APENAS a secao 'Visao geral', um dev saberia em que arquivo comecar a mexer?",
+        "O detalhe de codigo aparece so onde e critico, ou esta espalhado uniformemente?",
+        "Os 'porques' explicam decisoes reais, ou sao parafrase do que o codigo faz?",
+        "A secao 'Pontos a confirmar' lista limites reais, ou e boilerplate generico?"
+      ]
+    },
+    {
+      "id": 2,
+      "nome": "petclinic-cancelar-visita-inexistente",
+      "prompt": "quero permitir que o usuario cancele uma visita agendada, me explique como funciona hoje antes de eu mexer",
+      "expected_output": "A skill deve constatar que cancelar/excluir visita NAO existe hoje e descrever o que existe (so criacao), em vez de descrever uma funcionalidade imaginaria.",
+      "setup": {
+        "repo": "https://github.com/spring-projects/spring-petclinic",
+        "commit": "88e37c15cf6fc8490b01bc3e8e2c800cec1ac272",
+        "linguagem": "java",
+        "porque_este_caso": "Caso NEGATIVO. Testa o modo de falha mais perigoso de um explicador: pedir explicacao de algo que nao existe e receber uma descricao plausivel e inventada. O dossie vem quase vazio de proposito."
+      },
+      "gabarito": {
+        "fatos_que_devem_aparecer": [
+          "nao existe hoje nenhum endpoint de cancelamento/exclusao de visita",
+          "VisitController expoe apenas GET e POST em /owners/{ownerId}/pets/{petId}/visits/new",
+          "Pet.visits e uma colecao final com apenas addVisit — nao ha caminho de remocao",
+          "o @OneToMany usa cascade = CascadeType.ALL, o que e material para quem for implementar a remocao"
+        ],
+        "armadilhas": [
+          "Nao pode descrever um fluxo de cancelamento que nao existe.",
+          "Nao pode citar metodo, rota ou arquivo inexistente (ex.: deleteVisit, VisitService, cancelVisit).",
+          "Dossie quase vazio deve virar 'isto nao existe', nunca preenchimento criativo."
+        ]
+      },
+      "expectations": [
+        "A explicacao afirma explicitamente que a funcionalidade nao existe hoje",
+        "A explicacao nao cita nenhum simbolo inexistente (deleteVisit, cancelVisit, VisitService, VisitRepository)",
+        "A explicacao descreve o que existe de fato (o fluxo de criacao de visita) como ponto de partida",
+        "A explicacao termina com 'Pontos a confirmar' e uma pergunta objetiva"
+      ],
+      "rubrica": [
+        "A skill resistiu a inventar, ou produziu uma descricao plausivel de algo inexistente?",
+        "A ausencia foi comunicada como fato util, ou como falha/desculpa?"
+      ]
+    }
+  ],
+  "cobertura_pendente": "Os dois casos sao Java/Spring. O README promete .NET, Kotlin, Go, Python, Angular e React — faltam casos para essas, cada um precisa de repo pinado e gabarito levantado a mao."
+}

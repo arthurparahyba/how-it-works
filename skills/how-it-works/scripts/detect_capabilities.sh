@@ -14,18 +14,25 @@ cd "$ROOT" || { echo '{"error":"repo inacessivel"}'; exit 1; }
 log "detectando capacidades em: $ROOT"
 
 # --- linguagens presentes (por extensao) ------------------------------------
-declare -A LANG_EXT=(
-  [csharp]="cs" [java]="java" [kotlin]="kt kts" [go]="go"
-  [python]="py" [typescript]="ts tsx" [javascript]="js jsx"
-)
-langs=()
-for lang in "${!LANG_EXT[@]}"; do
-  for ext in ${LANG_EXT[$lang]}; do
+# Lista "lang:ext,ext" em vez de array associativo: `declare -A` exige bash 4+
+# e o macOS ainda entrega bash 3.2 (Linux e Git Bash trazem 4+, mas o script
+# precisa rodar nos tres). Sem isto, este bloco falha e "languages" sai vazio.
+LANG_EXTS="csharp:cs java:java kotlin:kt,kts go:go python:py typescript:ts,tsx javascript:js,jsx"
+langs=""
+_oifs="$IFS"
+for entry in $LANG_EXTS; do
+  lang="${entry%%:*}"; exts="${entry#*:}"
+  IFS=','
+  for ext in $exts; do
+    IFS="$_oifs"
     if git ls-files "*.${ext}" 2>/dev/null | head -1 | grep -q . ; then
-      langs+=("$lang"); break
+      langs="$langs $lang"; break
     fi
+    IFS=','
   done
+  IFS="$_oifs"
 done
+IFS="$_oifs"
 
 # --- ferramentas da camada estrutural ---------------------------------------
 AG="$(astgrep_bin)"
@@ -79,7 +86,7 @@ fi
 # --- emite JSON --------------------------------------------------------------
 join() { local IFS=,; echo "$*"; }
 langs_json="["; first=true
-for l in "${langs[@]}"; do
+for l in $langs; do
   $first || langs_json+=","; langs_json+="\"$l\""; first=false
 done
 langs_json+="]"
@@ -101,4 +108,4 @@ cat << JSON
 }
 JSON
 
-log "tier de precisao: $tier | linguagens: ${langs[*]:-nenhuma}"
+log "tier de precisao: $tier | linguagens: ${langs:-nenhuma}"

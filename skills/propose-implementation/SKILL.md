@@ -7,7 +7,7 @@ description: >-
   Use esta skill sempre que o usuario ja entende como o codigo esta hoje e
   precisa decidir COMO implementar — ou pedir "proponha uma solucao", "quais as
   abordagens", "como voce faria isso", "monte o plano antes de codar", "gere o
-  openspec propose". Consome o dossie validado da fase 1 (explain-current-state);
+  openspec propose". Consome o dossie validado da fase 1 (how-it-works);
   se ele nao existir, roda a investigacao primeiro. Valida a proposta de forma
   deterministica (os simbolos/arquivos citados existem? qual o raio de impacto
   real?) para evitar propor APIs que nao existem. Emite os artefatos do OpenSpec
@@ -29,12 +29,12 @@ qualquer codigo, que depois alimenta o `openspec propose` ja fundamentada.
 ## Pre-requisito: o dossie da fase 1
 
 Esta skill consome o `FeatureDossier` validado e a explicacao "como e hoje"
-produzidos pela skill `explain-current-state`. Procure em:
+produzidos pela skill `how-it-works`. Procure em:
 
 - `openspec/changes/<id>/current-state.dossier.json`
 - `openspec/changes/<id>/current-state.md`
 
-**Se nao existirem**, rode a fase 1 primeiro (invoque `explain-current-state`)
+**Se nao existirem**, rode a fase 1 primeiro (invoque `how-it-works`)
 para nao propor sobre entendimento vazio. Nunca proponha sem os fatos da fatia.
 
 ## O fluxo (respeite o checkpoint humano)

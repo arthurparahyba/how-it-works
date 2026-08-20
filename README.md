@@ -11,7 +11,7 @@ Funciona em **.NET, Java, Kotlin, Go, Python, Angular e React**.
 
 ## Status
 
-- **Fase 1 — "como é hoje"** (`skills/explain-current-state/`): implementada.
+- **Fase 1 — "como é hoje"** (`skills/how-it-works/`): implementada.
 - **Fase 2 — "proposta"** (`skills/propose-implementation/`): implementada.
 
 As duas fases são separadas por um checkpoint humano: o desenvolvedor valida o
@@ -31,11 +31,11 @@ rápido, mais assertivo. Detalhe abundante em `docs/`.
 ```
 claude-feature-explainer/
 ├── skills/
-│   ├── explain-current-state/     # fase 1 — investigar e explicar
+│   ├── how-it-works/     # fase 1 — investigar e explicar
 │   │   ├── SKILL.md
 │   │   ├── scripts/               # pipeline determinístico (bash)
 │   │   ├── references/            # schema, prompt de síntese, tiers
-│   │   └── assets/                # template da explicação
+│   │   └── evals/                 # casos de teste + gabarito (não lido em runtime)
 │   └── propose-implementation/    # fase 2 — abordagens, validação, handoff
 │       ├── SKILL.md
 │       ├── scripts/               # validação + impacto + emissão OpenSpec
@@ -55,7 +55,7 @@ cd ~/.claude/claude-feature-explainer
 ./install.sh
 ```
 
-O instalador cria um symlink de `skills/explain-current-state` para
+O instalador cria um symlink de `skills/how-it-works` para
 `~/.claude/skills/`, onde o Claude Code descobre skills pessoais. Depois é só
 pedir, num repositório de código: *"explique como funciona X antes de eu mexer"*.
 

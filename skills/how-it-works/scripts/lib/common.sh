@@ -27,10 +27,16 @@ repo_root() {
 # --- json helpers (sem jq como dependencia obrigatoria) ----------------------
 # Escapa uma string para embutir em JSON.
 json_escape() {
-  python3 - "$1" << 'PY' 2>/dev/null || printf '%s' "$1"
+  if have python3; then
+    python3 - "$1" << 'PY' 2>/dev/null && return 0
 import json,sys
 print(json.dumps(sys.argv[1])[1:-1], end="")
 PY
+  fi
+  # Fallback sem python: o Git Bash no Windows frequentemente nao traz python3.
+  # Escapar \ e " e o minimo para nao produzir JSON invalido (caminhos do
+  # Windows chegam como /c/Users/... via MSYS, mas nao ha garantia disso).
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\n\r\t'
 }
 
 # jq e opcional; se existir, usamos para montar JSON de forma robusta.

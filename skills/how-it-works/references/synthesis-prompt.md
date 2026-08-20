@@ -44,7 +44,18 @@ de timeouts intermitentes do gateway" vale mais que "há um retry aqui".
 Cada afirmação sobre o código aponta para `arquivo:linha`. O leitor precisa
 poder verificar. Não parafraseie o código de forma vaga; cite o real.
 
-### 5. Mostre o impacto
+### 5. O comportamento que não está no código
+
+Leia `config_b64`. Tipo e collation de coluna, profile ativo, feature flag,
+binding de rota — isso decide o que o código faz, sem que o código mude. Se o
+schema divergir entre ambientes, **isso é material crítico**, não rodapé.
+
+Exemplo real (petclinic): a busca de owners só é insensível a maiúsculas porque
+`db/h2/schema.sql:39` declara `VARCHAR_IGNORECASE`; em `db/postgres/schema.sql:29`
+a coluna é `TEXT` e a busca vira sensível. Nenhum `.java` diz isso. Uma
+explicação que omite esse fato está correta e inútil para quem vai mexer.
+
+### 6. Mostre o impacto
 
 Do `blast_radius_b64`: quem chama e o que é chamado. Se houver um call graph,
 renderize como Mermaid `graph TD`. Isso deixa claro o que a mudança futura vai
@@ -83,3 +94,61 @@ Isso não diz nada. Compare com:
 > pontos — checkout, preview de carrinho e a API de cotação. O caso do bug está
 > na linha 94, onde descontos empilhados não são limitados ao teto de 40%
 > (introduzido no PR #201, que não previa empilhamento)."
+
+---
+
+# O formato de saída
+
+Produza a explicação nesta estrutura. Ela era um arquivo separado
+(`assets/explanation-template.md`); foi trazida para cá porque abrir dois
+arquivos para escrever um texto custa uma ida e volta a mais sem ganho nenhum.
+
+> Escopo desta explicação: <descrição curta da mudança pretendida>
+> Precisão das arestas de impacto: <tier2 preciso | tier1 aproximado | tier0 textual>
+
+## Visão geral
+
+<2–4 frases: papel da fatia, problema que resolve, peças-chave. Sem detalhe de
+implementação. Este é o mapa mental.>
+
+## As peças (detalhe condicional)
+
+<Para cada elemento tocado, escolha a profundidade:>
+
+- **<Peça trivial>** — <uma linha.>
+- **<Peça significativa>** — <parágrafo curto: papel e conexões.>
+
+### <Peça crítica> — `arquivo:linha`
+
+<Trecho de código real, < 20 linhas:>
+
+```<lang>
+<código>
+```
+
+<Por que é crítico + efeito colateral + o "porquê" (commit/PR se houver).>
+
+## Impacto da mudança
+
+<Diagrama Mermaid do raio de impacto, se houver arestas:>
+
+```mermaid
+graph TD
+  A[Chamador 1] --> S[<Símbolo central>]
+  B[Chamador 2] --> S
+  S --> C[Dependência 1]
+```
+
+<Frase: o que uma alteração aqui vai tocar.>
+
+## Rede de segurança
+
+<Testes que já cobrem a fatia + lacunas de cobertura relevantes.>
+
+## Pontos a confirmar
+
+<As lacunas que a análise estática não resolve: dispatch dinâmico, DI,
+cross-service, campos vazios do dossiê, tier baixo. Seja honesto.>
+
+**Pergunta para você:** <uma pergunta objetiva para abrir a discussão antes da
+proposta.>

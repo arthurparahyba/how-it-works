@@ -36,7 +36,7 @@ expand_astgrep() {
   [ -n "$AG" ] || return 1
   log "fonte de arestas: ast-grep (estrutural, aproximado)"
   # chamadas ao simbolo: padrao isomorfico ao codigo. $$$ casa argumentos.
-  "$AG" run --pattern "${SYMBOL}(\$\$\$)" --json=compact 2>/dev/null \
+  "$AG" run --pattern "${SYMBOL}(\$\$\$)" --json=compact . </dev/null 2>/dev/null \
     | head -c 200000
 }
 
@@ -44,9 +44,9 @@ expand_astgrep() {
 expand_textual() {
   log "fonte de arestas: textual (ruidoso, ultimo recurso)"
   if have rg; then
-    rg --line-number --no-heading -w "$SYMBOL" 2>/dev/null | head -n "$TOP_N"
+    rg --line-number --no-heading -w "$SYMBOL" . </dev/null 2>/dev/null | head -n "$TOP_N"
   else
-    git grep -n -w "$SYMBOL" 2>/dev/null | head -n "$TOP_N"
+    git grep -n -w "$SYMBOL" </dev/null 2>/dev/null | head -n "$TOP_N"
   fi
 }
 

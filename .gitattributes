@@ -1,0 +1,4 @@
+# Os scripts sao interpretados por bash. No Windows (Git Bash) um checkout com
+# CRLF quebra o shebang ("bad interpreter: /usr/bin/env bash^M") e qualquer
+# heredoc. Forcar LF vale para Linux, macOS e Windows igualmente.
+*.sh text eol=lf

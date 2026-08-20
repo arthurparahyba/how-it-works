@@ -20,20 +20,33 @@ callers_of() {
   if [ -n "$SCIP_INDEX" ] && [ -f "$SCIP_INDEX" ] && have scip; then
     scip print --json "$SCIP_INDEX" 2>/dev/null | grep -i "$sym" | head -n "$TOP_N"
   elif [ -n "$AG" ]; then
-    "$AG" run --pattern "${sym}(\$\$\$)" --json=compact 2>/dev/null \
+    "$AG" run --pattern "${sym}(\$\$\$)" --json=compact . </dev/null 2>/dev/null \
       | grep -oE '"file":"[^"]+"' | sort | uniq -c | sort -rn | head -n "$TOP_N"
   elif have rg; then
-    rg --line-number --no-heading -w "$sym" 2>/dev/null | head -n "$TOP_N"
+    rg --line-number --no-heading -w "$sym" . </dev/null 2>/dev/null | head -n "$TOP_N"
   else
-    git grep -n -w "$sym" 2>/dev/null | head -n "$TOP_N"
+    git grep -n -w "$sym" </dev/null 2>/dev/null | head -n "$TOP_N"
   fi
 }
 
+# Casa o padrao contra o BASENAME do candidato, nunca contra o caminho inteiro:
+# um diretorio chamado `owner/` faria todo arquivo dentro dele parecer teste de
+# `Owner`. awk com index() em vez de regex dinamica -> mesmo comportamento em
+# gawk (Linux), BSD awk (macOS) e o awk do Git Bash.
 tests_for_file() {
-  local f="$1"
-  local base; base="$(basename "$f" | sed 's/\.[^.]*$//')"
-  [ -n "$base" ] && git ls-files 2>/dev/null \
-    | grep -iE "(test|spec).*${base}|${base}.*(test|spec)" | head -10
+  local f="$1" base
+  base="$(basename "$f" | sed 's/\.[^.]*$//')"
+  [ -n "$base" ] || return 0
+  git ls-files 2>/dev/null | awk -v bases="$base" '
+      BEGIN { nb = split(tolower(bases), b, " ") }
+      { n = $0; sub(/^.*\//, "", n); ln = tolower(n)
+        if (!(index(ln, "test") || index(ln, "spec"))) next
+        core = n; sub(/\.[^.]*$/, "", core)
+        sub(/^([Tt]ests?|[Ss]pecs?)[_.-]/, "", core)
+        sub(/[_.-]?([Tt]ests?|[Ss]pecs?)$/, "", core)
+        lc = tolower(core)
+        for (i = 1; i <= nb; i++) if (b[i] != "" && lc == b[i]) { print; break } }
+  ' | head -10
 }
 
 echo "## Raio de impacto da proposta"
