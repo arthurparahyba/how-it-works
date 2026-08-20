@@ -122,7 +122,60 @@
         "O fallback silencioso foi tratado como o fato central, ou como detalhe?",
         "A cadeia config -> DI -> IsEnabled -> comportamento foi reconstruida por inteiro?"
       ]
+    },
+    {
+      "id": 4,
+      "nome": "petclinic-kotlin-busca-owner",
+      "prompt": "quero melhorar a busca de owners por sobrenome, me explique como funciona hoje antes de eu mexer",
+      "expected_output": "Explicacao da fatia de busca de owners na porta Kotlin: ponto de entrada, a consulta JPQL declarada na anotacao (e nao derivada do nome do metodo), a ausencia de paginacao, os tres desfechos do when, e a case-insensitivity que so existe por causa do schema do H2.",
+      "setup": {
+        "repo": "https://github.com/spring-petclinic/spring-petclinic-kotlin",
+        "commit": "0ada850687b515faae64cb3a7497f452226ce65d",
+        "linguagem": "kotlin",
+        "tier_esperado": "tier1 (exige ast-grep no PATH; e o primeiro caso escrito para exercitar o casamento por node-kind)",
+        "clone": "historico COMPLETO. O gabarito cobra commits de 2017-2018; um clone --depth raso deixa a proveniencia vazia e reprova a explicacao por um defeito do setup.",
+        "porque_este_caso": "O prompt e IDENTICO ao do caso 1 de proposito: mesmo dominio, mesma pergunta, outra linguagem. O que sobrar de diferenca no resultado e atribuivel ao Kotlin, nao a dificuldade do repositorio. E nao e copia: esta porta partiu de um petclinic mais antigo, entao as respostas certas mudam — quem responder de memoria do caso Java erra. Alem disso e o primeiro caso que exercita a extracao por node-kind em Kotlin, cuja gramatica nao expoe `field: name` (ver references/language-node-kinds.md)."
+      },
+      "gabarito": {
+        "fatos_que_devem_aparecer": [
+          "OwnerController.processFindForm e o ponto de entrada, mapeado em GET /owners (OwnerController.kt:69-70)",
+          "a busca e por PREFIXO, e isso vem do `LIKE :lastName%` dentro da string do @Query (OwnerRepository.kt:42) — o nome do metodo (`findByLastName`) nao diz isso",
+          "OwnerRepository e interface sem implementacao: o Spring Data cria o proxy em runtime. MAS a consulta e declarada explicitamente no @Query, nao derivada do nome",
+          "nao ha paginacao: o metodo devolve Collection<Owner> inteira",
+          "o `when` tem tres desfechos (OwnerController.kt:73-88): vazio devolve ao formulario com rejectValue; exatamente um redireciona para /owners/{id}; varios caem em model[\"selections\"]",
+          "a insensibilidade a maiusculas vem de VARCHAR_IGNORECASE(30) em db/h2/schema.sql:39; no MySQL a mesma coluna e VARCHAR(30) (db/mysql/schema.sql:31) e a busca fica sensivel",
+          "qual schema e carregado nao esta no codigo: `database=h2` em application.properties:2, interpolado em spring.sql.init.schema-locations",
+          "lastName e nao-nulo com default \"\" (Person.kt:38), entao busca vazia vira LIKE '%' e casa todos"
+        ],
+        "porques_disponiveis_na_proveniencia": [
+          "874055c — 'Person firstName and lastName are not more nullable' explica por que o controller nao checa nulo antes de buscar (a versao Java checa)",
+          "0149c04 — 'Replace iterator().next() by first()' explica o results.first() do braco de resultado unico",
+          "3a875b3 — 'Shorten syntax of mode.put' explica o model[\"selections\"] = results no lugar de addAttribute"
+        ],
+        "armadilhas": [
+          "Nao pode dizer que a consulta e DERIVADA do nome do metodo. E o reflexo do caso Java e esta errado aqui: ha @Query explicito.",
+          "Nao pode inventar OwnerRepositoryImpl nem uma camada de servico (OwnerService): nao existem.",
+          "Nao pode afirmar paginacao. Pageable/PageRequest/pageSize sao do petclinic Java, nao desta porta.",
+          "Nao pode afirmar que a busca e case-insensitive sem qualificar que isso depende do schema carregado."
+        ]
+      },
+      "expectations": [
+        "A explicacao ancora as afirmacoes em arquivo:linha verificaveis",
+        "A explicacao identifica que o comportamento de prefixo vem da consulta declarada na anotacao, nao do nome do metodo",
+        "A explicacao menciona o schema SQL como origem do comportamento de case-sensitivity e a divergencia entre H2 e MySQL",
+        "A explicacao usa pelo menos um dos commits da proveniencia para explicar um 'porque'",
+        "A explicacao sinaliza que o repositorio e resolvido em runtime pelo Spring Data",
+        "A explicacao termina com 'Pontos a confirmar' e uma pergunta objetiva",
+        "A explicacao aplica profundidade condicional: nem tudo recebe o mesmo detalhe"
+      ],
+      "rubrica": [
+        "A explicacao percebeu que o `%` na string da consulta e o que define o comportamento, ou so repetiu o nome do metodo?",
+        "Lendo APENAS a secao 'Visao geral', um dev saberia em que arquivo comecar a mexer?",
+        "Os idiomas de Kotlin (when como expressao, first(), model[...]) sao explicados onde importam, ou detalhados uniformemente?",
+        "Os 'porques' explicam decisoes reais dos commits, ou sao parafrase do que o codigo faz?",
+        "A secao 'Pontos a confirmar' lista limites reais, ou e boilerplate generico?"
+      ]
     }
   ],
-  "cobertura_pendente": "Casos 1 e 2 sao Java/Spring; o caso 3 e .NET. O README promete tambem Kotlin, Go, Python, Angular e React. Todos os casos rodaram so em tier0."
+  "cobertura_pendente": "Casos 1 e 2 sao Java/Spring; o caso 3 e .NET; o caso 4 e Kotlin. O README promete tambem Go, Python, Angular e React. Os casos 1-3 foram gravados em tier0; o caso 4 e o primeiro escrito para tier1 (casamento por node-kind). tier2 nunca foi exercitado."
 }

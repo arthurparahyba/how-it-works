@@ -140,9 +140,15 @@ skills/how-it-works/evals/check_assertions.sh <nome-do-caso> <arquivo-gerado>
 Casos em `evals/evals.json`, todos com **commit pinado** (sem isso o gabarito
 apodrece quando o upstream mexe nas linhas).
 
-Estado da cobertura: 3 casos, 2 linguagens (Java/Spring no petclinic, .NET no
-eShop), **todos em `tier0`**. O README promete sete linguagens. `tier1` e `tier2`
-nunca foram exercitados.
+Estado da cobertura: 4 casos, 3 linguagens (Java/Spring no petclinic, .NET no
+eShop, Kotlin/Spring no petclinic-kotlin). Os casos 1-3 foram gravados em
+`tier0`; o caso 4 e o primeiro escrito para **`tier1`** — ele so tem sentido com
+`ast-grep` no PATH, porque existe para exercitar o casamento por node-kind. O
+README promete sete linguagens; `tier2` nunca foi exercitado.
+
+O caso 4 exige **clone com historico completo**: o gabarito cobra commits de
+2017-2018, e um `--depth` raso esvazia a proveniencia e reprova a explicacao por
+um defeito do setup, nao dela.
 
 Ao escrever asserção: **teste o conceito, não o vocabulário**. Uma asserção que
 exigia a palavra "fallback" reprovou uma explicação que dizia "busca comum por

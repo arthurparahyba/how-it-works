@@ -34,7 +34,10 @@ has() {
 # Um `grep` ingenuo reprova isso — foi o que aconteceu na primeira versao deste
 # arquivo. Por isso as linhas com negacao sao descartadas antes do teste: so
 # resta alucinacao de verdade, o simbolo citado como se existisse.
-NEG_RE='n.o (existe|h.|possui|tem|e |é |usa|passa)|inexistente|ausente|nenhum[a]?|sem (camada|servi.o)'
+# A negacao nem sempre traz o verbo: "a consulta e declarada, NAO DERIVADA do
+# nome" nega com um adjetivo solto, e a primeira versao desta lista deixava
+# passar — reprovando uma explicacao correta por dizer a coisa certa.
+NEG_RE='n.o (existe|h.|possui|tem|e |é |usa|passa|derivad|vem|sai)|em vez de derivad|inexistente|ausente|nenhum[a]?|sem (camada|servi.o)'
 # has2: exige que UMA MESMA LINHA case os dois padrões. Substitui o truque de
 # `A.{0,400}B` num regex só, que com `-i` e UTF-8 estoura o limite de
 # complexidade do ugrep — e o pior é que ele falha em silêncio, contando como
@@ -110,7 +113,7 @@ case "$CASE" in
     has   "tem a secao Pontos a confirmar"             '^#+.*Pontos a confirmar'
     has   "termina com pergunta objetiva"              '\?'
     hasnt "nao inventa implementacao do repositorio"   'OwnerRepositoryImpl|OwnerServiceImpl|OwnerService\b'
-    hasnt "nao afirma case-insensitive sem qualificar" 'sempre (e|é) (case-)?insens.vel'
+    hasnt "nao afirma case-insensitive sem qualificar" 'sempre (e|é) (case-)?insens(.vel|itive)'
     ;;
   petclinic-cancelar-visita-inexistente)
     has   "afirma explicitamente que nao existe hoje"  'n.o existe|inexistente|n.o h. (nenhum|funcionalidade|endpoint|fluxo)'
@@ -148,6 +151,37 @@ case "$CASE" in
     has   "termina com pergunta objetiva"               '\?'
     hasnt "nao afirma que a busca semantica sempre ocorre" 'sempre (usa|faz|executa|realiza) (a )?busca sem.ntica'
     hasnt "nao inventa simbolo inexistente"             'CatalogSearchService|SemanticSearchService|ISemanticSearch|EmbeddingService\b'
+    ;;
+  petclinic-kotlin-busca-owner)
+    has   "ancora em arquivo:linha"                     '[A-Za-z0-9_/.-]+\.(kt|kts|sql|properties|html):[0-9]+'
+    has   "cita o ponto de entrada processFindForm"     'processFindForm'
+    has   "cita a consulta declarada na anotacao"       '@Query|JPQL'
+    # O ponto do caso. Testa o CONCEITO — que o prefixo vem da consulta, nao do
+    # nome do metodo — exigindo que uma MESMA linha ligue as duas coisas. Quem
+    # so escrever "busca por prefixo" nao passa: essa frase tambem sai de quem
+    # copiou a resposta do caso Java, onde o prefixo vem do nome.
+    has2  "liga o prefixo a consulta, nao ao nome do metodo" \
+          'LIKE|@Query|JPQL|consulta|query' \
+          'lastName%|%|prefixo|come.a'
+    has   "cita o schema SQL como origem do comportamento" 'schema\.sql|VARCHAR_IGNORECASE'
+    has   "distingue os bancos (h2 vs mysql)"           '(h2|H2).*(mysql|MySQL)|(mysql|MySQL).*(h2|H2)'
+    has   "cita a config que escolhe o schema"          'database=h2|schema-locations|application\.properties'
+    has   "sinaliza resolucao em runtime (Spring Data/proxy)" 'runtime|Spring Data|proxy'
+    has   "usa a proveniencia para explicar um porque"  '874055c|0149c04|3a875b3|nullable|first\(\)|iterator|addAttribute'
+    has   "tem a secao Pontos a confirmar"              '^#+.*Pontos a confirmar'
+    has   "termina com pergunta objetiva"               '\?'
+    hasnt "nao inventa implementacao do repositorio"    'OwnerRepositoryImpl|OwnerServiceImpl|OwnerService\b'
+    # O erro mais provavel aqui e responder de memoria do caso Java, onde a
+    # query E derivada do nome. So a forma AFIRMATIVA reprova: uma explicacao
+    # boa costuma dizer justamente que NAO e derivada, e o filtro de negacao
+    # (NEG_RE) descarta essas linhas antes do teste.
+    hasnt "nao diz que a query e derivada do nome do metodo" \
+          'derivad[ao] do nome|deriva a (query|consulta) (a partir )?do nome|gera(da)? a (query|consulta) (a partir )?do nome'
+    # Simbolos de paginacao NAO existem nesta porta. Nao se testa a palavra
+    # "paginacao": uma explicacao correta pode dizer "sem paginacao", e a
+    # assercao mediria estilo em vez de conteudo.
+    hasnt "nao inventa paginacao"                       'Pageable|PageRequest|findPaginated'
+    hasnt "nao afirma case-insensitive sem qualificar"  'sempre (e|é) (case-)?insens(.vel|itive)'
     ;;
   *)
     echo "caso desconhecido: $CASE"; exit 2 ;;
