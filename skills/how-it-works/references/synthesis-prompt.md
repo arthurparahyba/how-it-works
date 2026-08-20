@@ -29,6 +29,16 @@ classifique a profundidade:
   e explique o **efeito colateral** ou a razão de ser. Crítico = a escolha não é
   óbvia, é irreversível, toca um contrato/interface, ou é onde o bug/mudança vive.
 
+**Teto: no máximo 3 peças críticas.** Não é sugestão. Se você tem 4 candidatas,
+a mais fraca é *significativa*, não crítica — rebaixe-a a um parágrafo. Este
+teto existe porque a tentação é promover a crítico tudo que você achou
+interessante no código, e aí a hierarquia some: quando tudo é crítico, o leitor
+volta a ter que descobrir sozinho por onde começar, que era o problema original.
+
+O critério de corte é **a mudança que o dev pediu**, não o quanto o achado é
+interessante. Um bug real numa parte que a mudança não toca é *significativo*,
+não crítico — mencione em uma linha e siga.
+
 Esta classificação é o que resolve "as explicações não entram no detalhe que
 importa". O detalhe de código é caro e ruidoso quando aplicado a tudo; aplicado
 só ao crítico, é exatamente o que o desenvolvedor precisa.
@@ -99,6 +109,58 @@ Use exemplos sobretudo nas peças **críticas**: entrada concreta, o que o usuá
 esperaria, e o que de fato acontece. Uma tabela pequena costuma resolver quando
 o comportamento varia por ambiente ou por configuração.
 
+### 9. Descreva o presente; não proponha a solução
+
+Esta skill responde *"como funciona hoje"*. Propor **é a outra fase**. A
+fronteira escorrega com facilidade porque, depois de entender o código, a
+solução parece óbvia — e escrever "basta adicionar X" é irresistível.
+
+O teste: a frase fala do **código que existe** ou de **código que não existe
+ainda**?
+
+> ❌ "Adicionar um índice HNSW é a melhoria de performance mais direta
+> disponível, e é uma migration, não uma mudança de C#."
+>
+> ✅ "Não há índice na coluna `Embedding` — só em `Name`
+> (`CatalogItemEntityTypeConfiguration.cs:13`). Cada busca calcula a distância
+> contra todos os itens indexados."
+
+O fato e a consequência entram. O conserto, o custo do conserto e o ranking de
+alternativas não. Verbos que denunciam a fronteira: *adicionar*, *trocar*,
+*basta*, *o alvo mais barato*, *seria melhor*, *recomendo*.
+
+**Uma exceção, e só uma:** a pergunta final. Ali você *nomeia* direções para o
+dev escolher — mas em forma de pergunta, sem recomendar nenhuma. "É relevância,
+performance ou corretude?" é legítimo; "eu começaria pela performance" não é.
+
+### 10. Código elidido tem que parecer elidido
+
+Condensar um trecho longo é certo. Apresentar o condensado como se fosse
+contínuo, não — quem for conferir a âncora vai achar que ela está errada.
+
+Se você removeu linhas do meio, **marque**:
+
+```csharp
+if (!services.CatalogAI.IsEnabled)
+{
+    return await GetItemsByName(paginationRequest, services, text);
+}
+
+// ... geração do vetor e contagem total ...
+
+itemsOnPage = await services.Context.CatalogItems
+    .Where(c => c.Embedding != null)
+    .OrderBy(c => c.Embedding!.CosineDistance(vector))
+```
+
+E se o bloco junta faixas não contíguas, **cite as faixas**, não um intervalo
+único: `CatalogApi.cs:245-256, 279-286` — nunca `CatalogApi.cs:242-288` para um
+bloco que tem 12 linhas.
+
+Isso não é preciosismo: a âncora é a promessa de que o leitor pode verificar. Um
+intervalo que não corresponde ao que está na tela quebra essa promessa em
+silêncio, e é indistinguível de um número errado.
+
 ## Regras de forma
 
 - Blocos de código abaixo de ~20 linhas. Se precisar de mais, resuma e aponte.
@@ -106,6 +168,10 @@ o comportamento varia por ambiente ou por configuração.
 - **Os títulos das seções são fixos** (os do formato abaixo). A linguagem da
   prosa muda para ficar clara; a estrutura não — o leitor e as checagens
   automáticas contam com ela.
+- **Orçamento: ~120 linhas.** Não é limite rígido, é o sinal de que você passou
+  do ponto. Estourou? O corte quase nunca é na prosa — é uma peça crítica que
+  devia ser significativa (ver o teto de 3), ou um achado interessante que a
+  mudança pedida não toca.
 - Português claro, direto, sem jargão gratuito.
 
 ## Honestidade sobre limites (obrigatório)

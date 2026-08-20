@@ -58,9 +58,44 @@ hasnt() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# Checagens de FORMA — valem para todo caso, porque são sobre disciplina de
+# escrita, não sobre o conteúdo de um repositório específico.
+# ---------------------------------------------------------------------------
+form_checks() {
+  local n_crit n_lines creep
+
+  # Teto de 3 peças críticas. Sem teto, tudo vira crítico e a hierarquia some.
+  n_crit="$(grep -cE '^#{3,} *Cr[ií]tic[ao]' "$OUT" 2>/dev/null | tr -dc '0-9')"
+  if [ "${n_crit:-0}" -le 3 ]; then
+    printf '  [ok]    no maximo 3 pecas criticas (tem %s)\n' "$n_crit"; PASS=$((PASS+1))
+  else
+    printf '  [FALHA] %s pecas criticas — o teto e 3; rebaixe a mais fraca\n' "$n_crit"; FAIL=$((FAIL+1))
+  fi
+
+  # Orçamento de tamanho. Não é limite rígido; é sinal de que passou do ponto.
+  n_lines="$(grep -c '' "$OUT" 2>/dev/null | tr -dc '0-9')"
+  if [ "${n_lines:-0}" -le 150 ]; then
+    printf '  [ok]    tamanho dentro do orcamento (%s linhas)\n' "$n_lines"; PASS=$((PASS+1))
+  else
+    printf '  [FALHA] %s linhas — orcamento e ~120, teto 150\n' "$n_lines"; FAIL=$((FAIL+1))
+  fi
+
+  # Escorregar para proposta. Só o corpo conta: a pergunta final PODE nomear
+  # direções, desde que em forma de pergunta. Corta o texto no marcador dela.
+  creep="$(sed '/^\*\*Pergunta para voc.\*\*/,$d' "$OUT" 2>/dev/null \
+           | grep -icE 'basta (adicionar|trocar|criar)|o alvo mais (barato|direto)|a melhoria mais (direta|barata)|seria melhor|recomendo|sugiro que' | tr -dc '0-9')"
+  if [ "${creep:-0}" -eq 0 ]; then
+    printf '  [ok]    descreve o presente, nao propoe solucao\n'; PASS=$((PASS+1))
+  else
+    printf '  [FALHA] %s frase(s) propondo solucao fora da pergunta final (fase 2)\n' "$creep"; FAIL=$((FAIL+1))
+  fi
+}
+
 echo "caso: $CASE"
 echo "saida: $OUT"
 echo
+form_checks
 
 case "$CASE" in
   petclinic-busca-owner)
