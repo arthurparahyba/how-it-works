@@ -97,7 +97,19 @@ corpo inteiro do método e um símbolo apenas *chamado* passa por *definido*).
 **O campo que guarda o nome muda por linguagem.** Java usa `field: name` no
 `method_invocation`; C# usa `field: function` no `invocation_expression`, e ali o
 nó é a expressão inteira (`obj.Metodo`), então o regex precisa ser
-`(^|\.)nome$`, não `^nome$`. Os helpers tentam os dois campos.
+`(^|\.)nome$`, não `^nome$`.
+
+**E em Kotlin não há campo nenhum.** A gramática do tree-sitter para Kotlin não
+expõe `name` (nem `function`) em `class_declaration`, `function_declaration` ou
+`call_expression` — o nome é um filho sem campo: `simple_identifier` na função e
+na chamada, `type_identifier` na classe. Pior: uma regra com `field:` inexistente
+**não casa zero vezes, ela nem parseia** ("Relational rule contains invalid field
+name"), e o erro ia para `/dev/null`. Resultado: `ag_find_defs`/`ag_find_calls`
+devolviam vazio e o Kotlin rodava tier0 se dizendo tier1, calado. Por isso a
+lista de matchers é **por linguagem** (`_ag_matchers_for` em `lib/common.sh`).
+E a chamada qualificada `obj.metodo()` em Kotlin fica três níveis abaixo
+(`call_expression > navigation_expression > navigation_suffix >
+simple_identifier`): o filho direto é o **receptor**, não o método.
 
 **Variável setada dentro de um pipeline não sai de lá.** `for ... done | head`
 roda em subshell; um `found=1` lá dentro nunca chega ao chamador. Isso fez o
