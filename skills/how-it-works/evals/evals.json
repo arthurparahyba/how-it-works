@@ -81,7 +81,48 @@
         "A ausencia foi comunicada como fato util, ou como falha/desculpa?",
         "Os simbolos que nao existem sao apresentados como PROPOSTA (onde deveriam ficar), ou como se ja existissem? So a segunda forma e alucinacao."
       ]
+    },
+    {
+      "id": 3,
+      "nome": "eshop-busca-semantica",
+      "prompt": "quero melhorar a busca semantica do catalogo, me explique como funciona hoje antes de eu mexer",
+      "expected_output": "Explicacao da busca semantica do Catalog.API: o endpoint, o fallback silencioso para busca textual, e o fato de o comportamento ser decidido por registro condicional no DI a partir de configuracao.",
+      "setup": {
+        "repo": "https://github.com/dotnet/eShop",
+        "commit": "ae71a0610162c6712c885f64e7706a9b7b54f2ee",
+        "linguagem": "csharp",
+        "porque_este_caso": "Primeiro caso fora de Java. Repositorio de microsservicos grande (20 projetos em src/), o que testa se o escopamento segura — o petclinic tem 30 arquivos e nunca exercitou isso. E o comportamento decisivo vive em DI + configuracao, que a propria skill declara como ponto cego da analise estatica."
+      },
+      "gabarito": {
+        "fatos_que_devem_aparecer": [
+          "o endpoint e /items/withsemanticrelevance (CatalogApi.cs:53 na v1, :60 na v2)",
+          "GetItemsBySemanticRelevance cai de volta para GetItemsByName — busca textual — em DOIS pontos: CatalogApi.cs:245 quando !CatalogAI.IsEnabled, e CatalogApi.cs:253 quando o vetor vem nulo",
+          "o fallback e SILENCIOSO: a resposta nao indica que a busca semantica nao aconteceu",
+          "CatalogAI.IsEnabled e simplesmente `_embeddingGenerator is not null` (CatalogAI.cs:25)",
+          "o construtor recebe IEmbeddingGenerator? com default null (CatalogAI.cs:17), entao a AUSENCIA de registro no DI desativa tudo em silencio",
+          "o registro no DI e condicional a configuracao (Extensions.cs:38-47): OllamaEnabled, ou a connection string textEmbeddingModel",
+          "a ordenacao usa CosineDistance sobre a coluna Vector? Embedding (CatalogItem.cs:40, pgvector)"
+        ],
+        "armadilhas": [
+          "Nao pode afirmar que a busca semantica sempre acontece quando o endpoint e chamado.",
+          "Nao pode inventar flag de configuracao, servico ou classe inexistente.",
+          "Deve reconhecer que o caminho DI->config nao e visivel para analise estatica textual e sinalizar isso."
+        ]
+      },
+      "expectations": [
+        "A explicacao ancora as afirmacoes em arquivo:linha verificaveis",
+        "A explicacao identifica o fallback silencioso para busca textual",
+        "A explicacao liga IsEnabled ao registro condicional no DI e a configuracao",
+        "A explicacao sinaliza o DI como limite da analise estatica",
+        "A explicacao termina com 'Pontos a confirmar' e uma pergunta objetiva",
+        "A explicacao aplica profundidade condicional"
+      ],
+      "rubrica": [
+        "O escopamento segurou? A explicacao ficou no Catalog.API ou se espalhou pelos 20 projetos do repo?",
+        "O fallback silencioso foi tratado como o fato central, ou como detalhe?",
+        "A cadeia config -> DI -> IsEnabled -> comportamento foi reconstruida por inteiro?"
+      ]
     }
   ],
-  "cobertura_pendente": "Os dois casos sao Java/Spring. O README promete .NET, Kotlin, Go, Python, Angular e React — faltam casos para essas, cada um precisa de repo pinado e gabarito levantado a mao."
+  "cobertura_pendente": "Casos 1 e 2 sao Java/Spring; o caso 3 e .NET. O README promete tambem Kotlin, Go, Python, Angular e React. Todos os casos rodaram so em tier0."
 }

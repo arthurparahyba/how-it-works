@@ -72,6 +72,22 @@ case "$CASE" in
     hasnt "nao ancora simbolo inexistente em arquivo:linha" \
           '(deleteVisit|cancelVisit|removeVisit|VisitService|VisitRepository)[^.]{0,80}\.(java|kt|cs):[0-9]+|[A-Za-z]+\.(java|kt|cs):[0-9]+[^.]{0,80}(deleteVisit|cancelVisit|removeVisit|VisitService)'
     ;;
+  eshop-busca-semantica)
+    has   "ancora em arquivo:linha"                     '[A-Za-z0-9_/.-]+\.(cs|json):[0-9]+'
+    has   "cita o endpoint da busca semantica"          'withsemanticrelevance'
+    has   "cita o metodo GetItemsBySemanticRelevance"   'GetItemsBySemanticRelevance'
+    has   "identifica o fallback para a busca textual"  '(fallback|cai de volta|volta para|recorre a|degrada).{0,80}(GetItemsByName|textual)|GetItemsByName.{0,60}(fallback|silencios)'
+    has   "diz que o fallback e silencioso"             'silencios|sem (avisar|sinalizar|indicar)|nao (avisa|sinaliza|indica|informa)'
+    has   "liga IsEnabled ao gerador de embedding"      'IsEnabled.{0,120}(_?embeddingGenerator|IEmbeddingGenerator)|(_?embeddingGenerator|IEmbeddingGenerator).{0,120}IsEnabled'
+    has   "liga o comportamento a config + DI"          '(OllamaEnabled|textEmbeddingModel)'
+    has   "cita o registro condicional no DI"           '(DI|inje[cç][aã]o de depend|AddScoped|AddEmbeddingGenerator|registr)'
+    has   "cita a distancia de cosseno / pgvector"      'CosineDistance|cosseno|pgvector|Vector'
+    has   "sinaliza o DI como limite da analise"        '(DI|inje[cç][aã]o|runtime|configura[cç][aã]o).{0,160}(n[aã]o (aparece|e vis[ií]vel|enxerga)|limite|est[aá]tic)|est[aá]tic.{0,160}(DI|inje[cç][aã]o)'
+    has   "tem a secao Pontos a confirmar"              '^#+.*Pontos a confirmar'
+    has   "termina com pergunta objetiva"               '\?'
+    hasnt "nao afirma que a busca semantica sempre ocorre" 'sempre (usa|faz|executa|realiza) (a )?busca sem[aâ]ntica'
+    hasnt "nao inventa simbolo inexistente"             'CatalogSearchService|SemanticSearchService|ISemanticSearch|EmbeddingService\b'
+    ;;
   *)
     echo "caso desconhecido: $CASE"; exit 2 ;;
 esac
