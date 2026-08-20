@@ -1,0 +1,52 @@
+# node-kinds.tsv — tipos de no do tree-sitter por linguagem e papel.
+# Destilado de CodeGraph (github.com/colbymchenry/codegraph, licenca MIT),
+# arquivos src/extraction/languages/*.ts. Colunas: <lang> <TAB> <role> <TAB> <kind>
+# role: def_class | def_func | def_method | call | import
+csharp	def_class	class_declaration
+csharp	def_class	record_declaration
+csharp	def_class	struct_declaration
+csharp	def_class	interface_declaration
+csharp	def_class	enum_declaration
+csharp	def_method	method_declaration
+csharp	def_method	constructor_declaration
+csharp	call	invocation_expression
+csharp	import	using_directive
+java	def_class	class_declaration
+java	def_class	interface_declaration
+java	def_class	enum_declaration
+java	def_method	method_declaration
+java	def_method	constructor_declaration
+java	call	method_invocation
+java	import	import_declaration
+kotlin	def_class	class_declaration
+kotlin	def_func	function_declaration
+kotlin	def_method	function_declaration
+kotlin	call	call_expression
+kotlin	import	import_header
+go	def_func	function_declaration
+go	def_method	method_declaration
+go	call	call_expression
+go	import	import_declaration
+python	def_class	class_definition
+python	def_func	function_definition
+python	def_method	function_definition
+python	call	call
+python	import	import_statement
+python	import	import_from_statement
+typescript	def_class	class_declaration
+typescript	def_class	abstract_class_declaration
+typescript	def_class	interface_declaration
+typescript	def_class	enum_declaration
+typescript	def_func	function_declaration
+typescript	def_func	arrow_function
+typescript	def_func	function_expression
+typescript	def_method	method_definition
+typescript	call	call_expression
+typescript	import	import_statement
+javascript	def_class	class_declaration
+javascript	def_func	function_declaration
+javascript	def_func	arrow_function
+javascript	def_func	function_expression
+javascript	def_method	method_definition
+javascript	call	call_expression
+javascript	import	import_statement

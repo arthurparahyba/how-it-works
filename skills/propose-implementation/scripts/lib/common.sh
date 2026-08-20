@@ -8,11 +8,13 @@ set -o pipefail
 # --- deteccao de ferramentas -------------------------------------------------
 have() { command -v "$1" >/dev/null 2>&1; }
 
-# ast-grep expoe o binario tanto como `ast-grep` quanto como `sg`.
+# ast-grep expoe o binario como `ast-grep` e (as vezes) como `sg`. ATENCAO:
+# em Linux, /usr/bin/sg e o utilitario setgroup, NAO o ast-grep — por isso so
+# aceitamos `sg` se ele realmente for o ast-grep. Evita rodar o binario errado.
 astgrep_bin() {
-  if have ast-grep; then echo "ast-grep";
-  elif have sg;       then echo "sg";
-  else echo ""; fi
+  if have ast-grep; then echo "ast-grep"; return; fi
+  if have sg && sg --version 2>/dev/null | grep -qi ast-grep; then echo "sg"; return; fi
+  echo ""
 }
 
 # --- logging (vai para stderr, nunca contamina o stdout do dossie) -----------
@@ -41,3 +43,68 @@ PY
 
 # jq e opcional; se existir, usamos para montar JSON de forma robusta.
 have_jq() { have jq; }
+
+
+# --- extracao precisa por tipo de no (tree-sitter) ---------------------------
+# A tabela em node-kinds.tsv foi destilada do CodeGraph (colbymchenry/codegraph,
+# MIT) — ver NOTICE.md. Casar por KIND em vez de regex elimina os falsos
+# positivos/negativos que a deteccao textual produz entre linguagens.
+
+# Diretorio desta lib, resolvido AGORA (no source), nao na hora da chamada:
+# dentro de uma funcao, ${BASH_SOURCE[0]} nao resolve de forma confiavel entre
+# versoes do bash, e node_kinds silenciosamente nao achava a tabela.
+_LIB_DIR_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# extensao de arquivo -> linguagem (nossas 7 alvo). Vazio se desconhecida.
+lang_of_file() {
+  case "${1##*.}" in
+    cs)        echo csharp ;;
+    java)      echo java ;;
+    kt|kts)    echo kotlin ;;
+    go)        echo go ;;
+    py)        echo python ;;
+    ts|tsx)    echo typescript ;;
+    js|jsx|mjs|cjs) echo javascript ;;
+    *)         echo "" ;;
+  esac
+}
+
+# Tipos de no de uma linguagem para um papel.
+# Papel: def_class | def_func | def_method | call | import
+node_kinds() {
+  local lang="$1" role="$2"
+  local KINDS_TSV="${LIB_DIR:-$_LIB_DIR_DEFAULT}/node-kinds.tsv"
+  [ -f "$KINDS_TSV" ] || return 1
+  awk -F'\t' -v l="$lang" -v r="$role" '$1==l && $2==r {print $3}' "$KINDS_TSV"
+}
+
+# Casa DEFINICOES de um simbolo por kind (preciso).
+# Duas armadilhas, ambas silenciosas — nenhuma das duas da erro, so resultado
+# errado:
+#   1. O regex vai em aspas SIMPLES no YAML. Entre aspas duplas o YAML
+#      interpreta \b como backspace antes de o ast-grep ver o regex, e a regra
+#      nunca casa.
+#   2. `has: { regex: ... }` casa QUALQUER descendente do no — o corpo inteiro
+#      do metodo. Assim `LongCountAsync`, que o eShop so CHAMA (e do EF Core),
+#      dava "definido aqui", que e o falso positivo que a mudanca vinha corrigir.
+#      `field: name` restringe ao identificador da declaracao. Ancorar o regex
+#      com ^...$ evita que `Catalog` case com `CatalogAI`. Usa os kinds de classe,
+# funcao e metodo da linguagem. Retorna 0 se achou ao menos uma definicao,
+# 1 se nao achou, 2 se nao ha tabela para a linguagem (caller usa fallback).
+ag_defs_by_kind() {
+  local ag="$1" lang="$2" name="$3"; shift 3
+  local scopes=("$@"); [ ${#scopes[@]} -eq 0 ] && scopes=(".")
+  local kinds; kinds="$(node_kinds "$lang" def_class; node_kinds "$lang" def_func; node_kinds "$lang" def_method)"
+  [ -z "$kinds" ] && return 2
+  local k
+  for k in $kinds; do
+    if "$ag" scan --inline-rules "id: d
+language: $lang
+rule:
+  kind: $k
+  has: { field: name, regex: '^$name$' }" "${scopes[@]}" </dev/null 2>/dev/null | grep -q 'help\[d\]'; then
+      return 0
+    fi
+  done
+  return 1
+}

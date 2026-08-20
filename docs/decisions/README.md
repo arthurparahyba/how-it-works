@@ -8,3 +8,4 @@ consequências. Use o [template](adr-template.md) para novas decisões.
 - [0003 — Separar caminho frio e quente](0003-cold-hot-path-split.md)
 - [0004 — Mapa de design vivo como prior](0004-living-design-map.md)
 - [0005 — Duas etapas com checkpoint e validação](0005-two-step-with-validation.md)
+- [0006 — Emprestar a tabela de extração do CodeGraph](0006-borrow-codegraph-extraction-table.md)

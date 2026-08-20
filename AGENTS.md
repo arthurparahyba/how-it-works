@@ -86,6 +86,14 @@ contra o basename.
 `locate_slice.sh` ranqueia por raridade do termo antes de cortar: termo raro é
 termo específico.
 
+**Detecção de símbolo por regex é frágil.** A tabela `scripts/lib/node-kinds.tsv`
+(destilada do CodeGraph, MIT — ver `NOTICE.md`) mapeia linguagem → tipo de nó do
+tree-sitter, e o casamento por kind via ast-grep substitui o palpite textual. Duas
+armadilhas silenciosas na regra YAML, que não dão erro e só produzem resultado
+errado: o regex precisa ir em **aspas simples** (entre aspas duplas o YAML come o
+`\b` como backspace), e precisa de `field: name` (sem isso, `has: {regex}` casa o
+corpo inteiro do método e um símbolo apenas *chamado* passa por *definido*).
+
 **Comportamento vive fora do código.** No petclinic, a busca só é insensível a
 maiúsculas por causa de `VARCHAR_IGNORECASE` no schema do H2. No eShop, a busca
 semântica só existe se a configuração registrar um gerador de embeddings. Nenhum

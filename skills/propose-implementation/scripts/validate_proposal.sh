@@ -26,14 +26,21 @@ AG="$(astgrep_bin)"
 # procura a DEFINICAO de um simbolo (nao so ocorrencias). Estrutural se possivel.
 symbol_defined() {
   local sym="$1"
+  # (1) Casamento por KIND do tree-sitter, por linguagem. Preciso: pergunta "ha
+  # um no de definicao de classe/funcao/metodo com este nome?", em vez de tentar
+  # adivinhar a sintaxe com uma lista de padroes textuais — que produzia falso
+  # negativo em C# (`public static async Task<T> Nome(`) e falso positivo em
+  # qualquer lugar onde `Nome =` aparecesse. Tabela em lib/node-kinds.tsv.
   if [ -n "$AG" ]; then
-    # tenta padroes de definicao comuns entre linguagens
-    for pat in "class $sym" "def $sym" "func $sym" "function $sym" "$sym(\$\$\$) {" "void $sym" "$sym ="; do
-      if "$AG" run --pattern "$pat" --json=compact . </dev/null 2>/dev/null \
-           | grep -q '"text"'; then return 0; fi
+    local langs lang
+    langs="$(git ls-files 2>/dev/null | sed 's/.*\.//' | sort -u \
+      | while read -r e; do lang_of_file "x.$e"; done | sort -u | grep -v '^$')"
+    for lang in $langs; do
+      ag_defs_by_kind "$AG" "$lang" "$sym" . && return 0
     done
   fi
-  # fallback textual: nome apos class/def/func/etc, ou nome seguido de ( ou = .
+  # (2) Fallback textual, quando falta ast-grep ou a linguagem nao esta na
+  # tabela: nome apos class/def/func/etc, ou nome seguido de ( ou = .
   # Busca na ARVORE DE TRABALHO (inclui codigo novo ainda nao commitado) para
   # nao gerar falso "missing" durante desenvolvimento ativo. Prefere ripgrep;
   # cai para grep -r; git grep e o ultimo recurso (so ve commitados).
