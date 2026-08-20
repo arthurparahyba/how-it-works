@@ -55,6 +55,7 @@ todos os outros por dentro — **rodá-los avulsos antes dele paga tudo duas vez
 | P4c | `enrich_provenance.sh` | commits e PRs — a camada do "porquê" |
 | P5 | `build_dossier.sh` | une tudo, trunca, emite markdown |
 | P6 | **modelo** | escreve a explicação |
+| P7 | `check_anchors.sh` | confere se cada `arquivo:linha` aponta para o que o texto diz |
 
 Os tiers de precisão: `tier2` (índice SCIP fresco, referências exatas), `tier1`
 (ast-grep, estrutural aproximado), `tier0` (texto, ruidoso). O caminho quente

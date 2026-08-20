@@ -185,6 +185,33 @@ elemento tocado, classifique como **trivial / significativo / critico**. Trivial
 colateral. Nunca detalhe uniformemente tudo; nunca pare no "o que" para o que e
 critico.
 
+### Passo 7 — Conferir as ancoras (obrigatorio, antes de entregar)
+
+```bash
+scripts/check_anchors.sh <arquivo-da-explicacao>
+```
+
+Voce afirmou dezenas de vezes "isto esta em `arquivo:linha`". Confira antes de
+entregar — um `sed -n '343p'` responde com certeza, nao ha por que voce se
+auto-auditar.
+
+A ancora e a promessa de que o leitor pode verificar. Uma errada nao estraga uma
+frase, estraga o documento: quem confere uma, nao acha, e passa a desconfiar de
+todas — inclusive das certas.
+
+A saida vem em tres niveis:
+
+- **ANCORAS QUEBRADAS** — arquivo inexistente, linha alem do fim, linha em
+  branco. Sem duvida possivel: **corrija**. O script diz qual e a declaracao
+  seguinte, entao o conserto costuma ser trocar um numero.
+- **A CONFERIR** — o nome que voce citou nao aparece perto daquela linha. Pode
+  ser legitimo (a ancora aponta um bloco, nao uma declaracao) ou pode ser erro.
+  **Olhe cada um.** O que nao vale e ignorar sem olhar.
+- **MAPA DAS ANCORAS** — cada ancora e o metodo que a contem. Leia comparando
+  com o que voce escreveu: se o mapa diz `UpdateItem()` e o seu texto diz
+  "quando o item e criado", os numeros estao trocados. Foi assim que um erro
+  real passou por todas as outras checagens.
+
 ## Formatos de saida
 
 Escolha o formato pelo **tipo de informacao**, nao um fixo:
